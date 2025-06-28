@@ -5,7 +5,7 @@ require('dotenv').config(); // Carga las variables de entorno desde un archivo .
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Importa Pool de la librería pg
-const nodemailer = require('nodemailer'); // <--- NUEVA: Importa Nodemailer
+const nodemailer = require('nodemailer'); // Importa Nodemailer
 
 // Inicializa la aplicación Express
 const app = express();
@@ -18,17 +18,19 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
+  ssl: { // <-- AÑADIDO: Configuración SSL para Render
+    rejectUnauthorized: false // Permite conexiones SSL incluso si el certificado no es verificado
+  }
 });
 
-// <--- NUEVO: Configuración del transportador de correo con Nodemailer ---
+// Configuración del transportador de correo con Nodemailer
 const transporter = nodemailer.createTransport({
   service: 'Gmail', // Usamos el servicio de Gmail
   auth: {
-    user: process.env.EMAIL_USER, // Tu dirección de correo de Gmail
-    pass: process.env.EMAIL_PASS, // ¡Tu contraseña de aplicación de Gmail!
+    user: process.env.EMAIL_USER, // Tu dirección de correo de Gmail desde .env
+    pass: process.env.EMAIL_PASS, // ¡Tu contraseña de aplicación de Gmail desde .env!
   },
 });
-// -------------------------------------------------------------------
 
 
 // Middlewares (funciones que se ejecutan antes de que lleguen a tus rutas)
@@ -73,7 +75,7 @@ app.get('/api/projects', async (req, res) => {
     res.json(result.rows);
     console.log('DEBUG: Proyectos enviados como respuesta.');
   } catch (err) {
-    console.error('ERROR CRÍTICO al obtener los proyectos en /api/projects:', err);
+    console.error('ERROR CRÍTICO al obtener los posts en /api/projects:', err);
     res.status(500).json({ message: 'Error interno del servidor al obtener los proyectos.', error: err.message });
   }
 });
@@ -103,12 +105,11 @@ app.post('/api/projects', async (req, res) => {
   }
 });
 
-// <--- NUEVA RUTA: Envío de formulario de contacto ---
+// Envío de formulario de contacto
 app.post('/api/contact', async (req, res) => {
   console.log('DEBUG: Petición POST recibida en /api/contact');
   const { name, email, message } = req.body;
 
-  // Validación básica de los campos del formulario
   if (!name || !email || !message) {
     console.log('DEBUG: Validación fallida en POST /api/contact (faltan datos)');
     return res.status(400).json({ message: 'Nombre, Email y Mensaje son obligatorios.' });
@@ -116,8 +117,8 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     const mailOptions = {
-      from: `"${name}" <${email}>`, // Remitente (nombre del que envía, su email)
-      to: process.env.EMAIL_USER, // Tu email, donde recibirás el mensaje
+      from: `"${name}" <${email}>`,
+      to: process.env.EMAIL_USER,
       subject: `Nuevo mensaje de portafolio de ${name}`,
       html: `
         <p><strong>Nombre:</strong> ${name}</p>
@@ -135,7 +136,7 @@ app.post('/api/contact', async (req, res) => {
     res.status(500).json({ message: 'Error al enviar el mensaje. Intenta de nuevo más tarde.' });
   }
 });
-// ----------------------------------------------------
+
 
 // Inicia el servidor
 app.listen(port, () => {
