@@ -13,12 +13,8 @@ const port = process.env.PORT || 5001; // El puerto de tu servidor, usa 5001 por
 
 // Configuración de la conexión a la base de datos PostgreSQL
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-  ssl: { // <-- AÑADIDO: Configuración SSL para Render
+  connectionString: process.env.DATABASE_URL, // <-- ¡CRÍTICO! Usamos la URL completa de Render
+  ssl: { // Mantenemos la configuración SSL que ya tenías
     rejectUnauthorized: false // Permite conexiones SSL incluso si el certificado no es verificado
   }
 });
